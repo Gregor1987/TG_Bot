@@ -1,1 +1,3 @@
-token = '5941304623:AAEwLO0IdFQvqgiCu8DAo-SU11juwCZ2mCc'
+token_bot = ''
+token_yandex = ''
+token_nasa = ''

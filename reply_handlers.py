@@ -3,57 +3,16 @@ import parser
 import variables
 
 
-def weather_where(message):
-    variables.Weather.location = message.text
-    if variables.Weather.location != 'Назад':
-        if variables.Weather.location == 'Тюмень':
-            variables.Weather.location = 'lat=57.15298462&lon=65.54122925'
-        elif variables.Weather.location == 'Пермь':
+def weather(message):
+    if message.text != 'Назад':
+        if message.text == 'Пермь':
             variables.Weather.location = 'lat=58.01045227&lon=56.2294426'
-        msg = bot.send_message(message.chat.id, 'Когда?', reply_markup=keyboard_weather_when)
-        bot.register_next_step_handler(msg, weather_when)
-    else:
-        bot.send_message(message.chat.id, 'Чем я еще могу помочь?', reply_markup=keyboard_main)
-
-
-def weather_when(message):
-    variables.Weather.when = message.text
-    if variables.Weather.when != 'Назад':
-        bot.send_message(message.chat.id, parser.weather(variables.Weather.location, variables.Weather.when),
-                         reply_markup=keyboard_main)
-    else:
-        bot.send_message(message.chat.id, 'Чем я еще могу помочь?', reply_markup=keyboard_main)
-
-
-def horo_zodiac(message):
-    variables.Horo.zodiac = message.text
-    if variables.Horo.zodiac != 'Назад':
-        if 'Овен' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'aries'
-        elif 'Телец' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'taurus'
-        elif 'Близнецы' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'gemini'
-        elif 'Рак' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'cancer'
-        elif 'Лев' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'leo'
-        elif 'Дева' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'virgo'
-        elif 'Весы' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'libra'
-        elif 'Скорпион' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'scorpius'
-        elif 'Стрелец' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'sagittarius'
-        elif 'Козерог' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'capricorn'
-        elif 'Водолей' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'aquarius'
-        elif 'Рыбы' in variables.Horo.zodiac:
-            variables.Horo.zodiac = 'pisces'
-        msg = bot.send_message(message.chat.id, 'На какой период?', reply_markup=keyboard_horo_period)
-        bot.register_next_step_handler(msg, horo_period)
+        elif message.text == 'Тюмень':
+            variables.Weather.location = 'lat=57.15298462&lon=65.54122925'
+        else:
+            variables.Weather.location = f'lat={message.location.latitude}&lon={message.location.longitude}'
+            bot.delete_message(message.chat.id, message.id)
+        bot.send_message(message.chat.id, parser.weather(variables.Weather.location), reply_markup=keyboard_main)
     else:
         bot.send_message(message.chat.id, 'Чем я еще могу помочь?', reply_markup=keyboard_main)
 
@@ -75,9 +34,33 @@ def horo_period(message):
         bot.send_message(message.chat.id, 'Чем я еще могу помочь?', reply_markup=keyboard_main)
 
 
-def currency(message):
-    curr = message.text
-    if curr != 'Назад':
-        bot.send_message(message.chat.id, parser.currency(curr), reply_markup=keyboard_main)
+def currency_code(message):
+    if message.text != 'Назад' and message.text != 'Справочник кодов валют':
+        if message.text.upper() in variables.Currency.currency_codes.keys():
+            variables.Currency.currency = message.text.upper()
+            msg = bot.send_message(message.chat.id, 'Введите количество', reply_markup=keyboard_currency)
+            bot.register_next_step_handler(msg, currency_amount)
+        else:
+            msg = bot.send_message(message.chat.id, 'Валюты с таким кодом нет, попробуйте еще раз',
+                                   reply_markup=keyboard_currency_ids)
+            bot.register_next_step_handler(msg, currency_code)
+    elif message.text == 'Справочник кодов валют':
+        msg = bot.send_message(message.chat.id, variables.print_currency_codes(), reply_markup=keyboard_currency_ids)
+        bot.register_next_step_handler(msg, currency_code)
+    else:
+        bot.send_message(message.chat.id, 'Чем я еще могу помочь?', reply_markup=keyboard_main)
+
+
+def currency_amount(message):
+    if message.text != 'Назад':
+        variables.Currency.amount = message.text.replace(',', '.')
+        if variables.Currency.amount.replace('.', '', 1).isdigit():
+            variables.Currency.amount = float(variables.Currency.amount)
+            bot.send_message(message.chat.id, parser.currency_converter(variables.Currency.amount, variables.Currency.currency),
+                             reply_markup=keyboard_main)
+        else:
+            msg = bot.send_message(message.chat.id, 'Количество введено некорректно, попробуйте еще раз',
+                                   reply_markup=keyboard_currency)
+            bot.register_next_step_handler(msg, currency_amount)
     else:
         bot.send_message(message.chat.id, 'Чем я еще могу помочь?', reply_markup=keyboard_main)
