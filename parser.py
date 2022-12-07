@@ -22,7 +22,8 @@ def weather(location):
 def horoscope(zodiac, period):
     response = requests.get('https://horo.mail.ru/prediction/' + zodiac + period)
     bs = BeautifulSoup(response.text, 'lxml')
-    return bs.find('div', 'article__item article__item_alignment_left article__item_html').text
+    return (bs.find('h1', 'hdr__inner').text + '\n\n' +
+            bs.find('div', 'article__item article__item_alignment_left article__item_html').text)
 
 
 def currency_converter(amount, currency):
